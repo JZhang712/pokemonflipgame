@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html>
+ <head>
+    <title>Memory</title>
+    <style>
+      body {
+        background-color: black;
+        color: white;
+        font-family: monospace;
+        text-align: center;
+      }
+      .hidden {
+        display: none;
+      }
+
+      #tokens {
+        width: 400px;
+        height: 300px;
+        margin: auto;
+      }
+
+      #tokens img {
+        width: 100px;
+        height: 100px;
+      }
+
+      .blue {
+        background-color: blue;
+      }
+
+
+    </style>
+  </head>
+  <body>
+
+    <h1>Memory Matching Madness!</h1>
+
+    <!-- start screen -->
+    <div id="screen_start">
+      <p>Play a fast-paced game of "memory" and try to beat your best time!</p>
+      <button id="start">Start</button>
+      <br>
+      <br>
+      <button class="easy">Easy</button>
+      <button class="medium">Medium</button>
+      <button class="hard">Hard</button>
+    </div>
+
+
+    <!-- game play screen -->
+    <div id="screen_game" class="hidden">
+      <div id="timer">Time: 0</div>
+      <div id="tokens">
+
+
+      </div>
+      <audio id="correct"><source src='assignment06_images/correct.wav' type = 'audio/wav'></audio>
+      <audio id="incorrect"><source src='assignment06_images/wrong.wav' type = 'audio/wav'></audio>
+    </div>
+
+
+    <!-- game over screen -->
+    <div id="screen_gameover" class="hidden">
+      <h1>Game Over!</h1>
+      <p>Final Time: </p>
+      <p id="final_time"></p>
+      <p>Best Time: </p>
+      <p id="best_time"></p>
+      <p>The best time(s) go(es) to: </p>
+      <input type="text" id="nametext" class="hidden">
+      <button id="namesubmit" class="hidden">Submit</button>
+      <p>Leaderboard: </p>
+      <p id="leader1"></p>
+      <p id="leader2"></p>
+      <p id="leader3"></p>
+      <button id="again">Play again</button>
+
+    </div>
+
+    <script>
+      // isolate our DOM queries
+      let screen_start = document.querySelector('#screen_start');
+      let screen_game = document.querySelector('#screen_game');
+      let screen_gameover = document.querySelector('#screen_gameover');
+      let start = document.querySelector('#start');
+      let tokens = document.querySelector('#tokens');
+      let play_again = document.querySelector('#again');
+      let final_time = document.getElementById('final_time');
+      let best_time = document.getElementById('best_time');
+      let timer = document.getElementById('timer');
+      let easy = document.querySelector('.easy');
+      let medium = document.querySelector('.medium');
+      let hard = document.querySelector('.hard');
+      let leader1 = document.getElementById('leader1');
+      let leader2 = document.getElementById('leader2');
+      let leader3 = document.getElementById('leader3');
+      let namesubmit = document.getElementById('namesubmit');
+      let nametext = document.getElementById('nametext');
+
+
+      
+
+      // vars to keep track of which elements were clicked
+      let token1 = false;
+      let token2 = false;
+
+      //Timer function
+      let seconds = 0;
+      function Timer() {
+        seconds++;
+        timer.innerHTML = 'Time: ' + seconds;
+      }
+
+      let poke_size = 6;
+      //Change board to reflect difficulty level
+      easy.onclick = function() {
+        medium.classList.remove('blue');
+        hard.classList.remove('blue');
+        easy.classList.add('blue');
+        tokens.style.width = '400px';
+        tokens.style.height = '300px';
+        poke_size = 6;
+      };
+
+      medium.onclick = function() {
+        medium.classList.add('blue');
+        hard.classList.remove('blue');
+        easy.classList.remove('blue');
+        tokens.style.width = '500px';
+        tokens.style.height = '400px';
+        poke_size = 10;
+      };
+
+      hard.onclick = function() {
+        medium.classList.remove('blue');
+        hard.classList.add('blue');
+        easy.classList.remove('blue');
+        tokens.style.width = '600px';
+        tokens.style.height = '500px';
+        poke_size = 15;
+      };
+
+      //count the matching pairs
+      var match_counter = 0;
+
+      //set local Storage for three leaderboard positions
+      if (!localStorage.getItem('gamestarted')) {
+        localStorage.setItem('leadereasy1', 9999);
+        localStorage.setItem('leadernameeasy1', "no name")
+        localStorage.setItem('leadereasy2', 9999);
+        localStorage.setItem('leadernameeasy2', "no name")
+        localStorage.setItem('leadereasy3', 9999);
+        localStorage.setItem('leadernameeasy3', "no name")
+        localStorage.setItem('leadermed1', 9999);
+        localStorage.setItem('leadernamemed1', "no name");
+        localStorage.setItem('leadermed2', 9999);
+        localStorage.setItem('leadernamemed2', "no name");
+        localStorage.setItem('leadermed3', 9999);
+        localStorage.setItem('leadernamemed3', "no name");
+        localStorage.setItem('leaderhard1', 9999);
+        localStorage.setItem('leadernamehard1', "no name");
+        localStorage.setItem('leaderhard2', 9999);
+        localStorage.setItem('leadernamehard2', "no name");
+        localStorage.setItem('leaderhard3', 9999);
+        localStorage.setItem('leadernamehard3', "no name");
+        localStorage.setItem('gamestarted', "yes");
+      }
+      
+      // when the user click start we need to show the game playing screen
+      start.addEventListener('click', function() {
+
+        // make the start screen invisible
+        screen_start.classList.add('hidden');
+
+        // show the playing screen
+        screen_game.classList.remove("hidden");
+
+        //activate timer
+        let time = setInterval(Timer, 1000);
+
+        // create 12 pokeballs for the user to click on
+
+        // pick 6 random pokemon
+        // array of all pokemon graphics
+        var assets = ['snorlax.png', 'electrabuzz.png', 'chansey.png', 'oddish.png',
+              'pikachu.png', 'paras.png', 'arcanine.png', 'ponita.png',
+              'venonat.png', 'eggsecute.png', 'machop.png', 'pidgey.png',
+              'psyduck.png', 'tauros.png', 'vulpix.png', 'gloom.png',
+              'krabby.png', 'butterfree.png', 'bulbasaur.png', 'clefairy.png',
+              'koffing.png', 'goldeen.png', 'magikarp.png', 'beedrill.png',
+              'lapras.png', 'meowth.png', 'ekans.png', 'jigglypuff.png',
+              'horsea.png', 'polywog.png', 'sandshrew.png', 'rattata.png',
+              'gengar.png', 'eevee.png', 'bellsprout.png', 'squirtle.png',
+              'seel.png', 'caterpie.png']
+        let pickedPokemon = [];
+
+        for (let i = 0; i < poke_size; i++) {
+          let randomP = parseInt( Math.random() * assets.length );
+          pickedPokemon.push( assets[randomP] );
+          pickedPokemon.push( assets[randomP] );
+          assets.splice( randomP, 1 );
+        }
+
+        // randomize the pokemon in our array
+        while (pickedPokemon.length > 0) {
+          let tempImage = document.createElement('img');
+          tempImage.src = 'assignment06_images/pokeball.png';
+
+          let secretIndex = parseInt( Math.random() * pickedPokemon.length );
+          tempImage.dataset.secret = pickedPokemon[ secretIndex ];
+          tempImage.dataset.matched = "no";
+          pickedPokemon.splice( secretIndex, 1 );
+
+          tokens.appendChild( tempImage );
+
+          tempImage.addEventListener('click', function(event) {
+
+            // if this is the first one clicked, show the image as-is
+            if (token1 == false && event.currentTarget.dataset.matched != "yes") {
+              // this becomes token1!
+              token1 = event.currentTarget;
+
+              // reveal our secret image
+              event.currentTarget.src = 'assignment06_images/' + event.currentTarget.dataset.secret;
+            }
+
+            // if this is the SECOND one clicked, we need to evaluate
+            else if(token2 == false && event.currentTarget.dataset.matched != "yes") {
+              // must be on token2
+              if (event.currentTarget != token1) {
+              
+              token2 = event.currentTarget;
+
+              // reveal our secret image
+              event.currentTarget.src = 'assignment06_images/' + event.currentTarget.dataset.secret;
+
+              if (token1.dataset.secret == token2.dataset.secret) {
+                console.log("MATCH!");
+                token1.dataset.matched = "yes";
+                token2.dataset.matched = "yes";
+                match_counter++;
+                document.getElementById('correct').play();
+                token1 = false;
+                token2 = false;
+                console.log(match_counter);
+                 //gameover
+                if (match_counter == poke_size) {
+                  clearInterval(time);
+                  //Change screen
+                  screen_game.classList.add("hidden");
+                  screen_gameover.classList.remove('hidden');
+
+                  //Calculate final time and high scores
+                  localStorage.setItem("endtime", seconds);
+                  final_time.innerHTML = localStorage.getItem("endtime");
+
+                  if (localStorage.getItem("highscore") === null) {
+                    localStorage.setItem("highscore", 1000);
+                    checkhigh();
+                  } else {
+                    checkhigh();
+                  };
+                  
+                  // Easy level leaderboard
+                  if (poke_size == 6) {
+                    namesubmit.onclick = function() {
+                      console.log('clicked');
+                      let playername = nametext.value;
+                      if (seconds < parseInt(localStorage.getItem("leadereasy1"))) {
+                          console.log(localStorage.getItem('player'));
+                          leader3.innerHTML = localStorage.getItem('leadernameeasy2') + ': ' + localStorage.getItem("leadereasy2");
+                          leader2.innerHTML = localStorage.getItem('leadernameeasy1') + ': ' + localStorage.getItem("leadereasy1");
+                          leader1.innerHTML = playername + ': ' + localStorage.getItem("endtime");
+                          localStorage.setItem('leadereasy3', localStorage.getItem("leadereasy2"));
+                          localStorage.setItem('leadereasy2', localStorage.getItem("leadereasy1"));
+                          localStorage.setItem('leadereasy1', seconds);
+                          localStorage.setItem('leadernameeasy3', localStorage.getItem("leadernameeasy2"));
+                          localStorage.setItem('leadernameeasy2', localStorage.getItem("leadernameeasy1"));
+                          localStorage.setItem('leadernameeasy1', playername);
+                          submitClick = false;
+                          
+                        } else if (seconds < parseInt(localStorage.getItem("leadereasy2"))) {
+                          console.log("one");
+                          leader3.innerHTML = localStorage.getItem('leadernameeasy2') + ': ' + localStorage.getItem("leadereasy2");
+                          leader2.innerHTML = playername + ': ' + localStorage.getItem("endtime");
+                          leader1.innerHTML = localStorage.getItem('leadernameeasy1') + ': ' + localStorage.getItem("leadereasy1");
+                          localStorage.setItem('leadereasy3', localStorage.getItem("leadereasy2"));
+                          localStorage.setItem('leadereasy2', seconds);
+                          localStorage.setItem('leadernameeasy3', localStorage.getItem("leadernameeasy2"));
+                          localStorage.setItem('leadernameeasy2', playername);
+                          submitClick = false;
+                        } else if (seconds < parseInt(localStorage.getItem("leadereasy3"))) {
+                          console.log("two");
+                          leader3.innerHTML = playername + ': ' + localStorage.getItem("endtime");
+                          leader2.innerHTML = localStorage.getItem('leadernameeasy2') + ': ' + localStorage.getItem("leadereasy2");
+                          leader1.innerHTML = localStorage.getItem('leadernameeasy1') + ': ' + localStorage.getItem("leadereasy1");
+                          localStorage.setItem('leadereasy3', seconds);
+                          localStorage.setItem('leadernameeasy3', playername);
+                        }
+                    }
+                  }
+
+                  // Medium Level leaderboard
+                  if (poke_size == 10) {
+                    namesubmit.onclick = function() {
+                      let playername = nametext.value;
+                        if (seconds < parseInt(localStorage.getItem("leadermed1"))) {
+                          console.log(localStorage.getItem('player'));
+                          leader3.innerHTML = localStorage.getItem('leadernamemed2') + ': ' + localStorage.getItem("leadermed2");
+                          leader2.innerHTML = localStorage.getItem('leadernamemed1') + ': ' + localStorage.getItem("leadermed1");
+                          leader1.innerHTML = playername + ': ' + localStorage.getItem("endtime");
+                          localStorage.setItem('leadermed3', localStorage.getItem("leadermed2"));
+                          localStorage.setItem('leadermed2', localStorage.getItem("leadermed1"));
+                          localStorage.setItem('leadermed1', seconds);
+                          localStorage.setItem('leadernamemed3', localStorage.getItem("leadernamemed2"));
+                          localStorage.setItem('leadernamemed2', localStorage.getItem("leadernamemed1"));
+                          localStorage.setItem('leadernamemed1', playername);
+                          
+                        } else if (seconds < parseInt(localStorage.getItem("leadermed2"))) {
+                          leader3.innerHTML = localStorage.getItem('leadernamemed2') + ': ' + localStorage.getItem("leadermed2");
+                          leader2.innerHTML = playername + ': ' + localStorage.getItem("endtime");
+                          leader1.innerHTML = localStorage.getItem('leadernamemed1') + ': ' + localStorage.getItem("leadermed1");
+                          localStorage.setItem('leadermed3', localStorage.getItem("leadermed2"));
+                          localStorage.setItem('leadermed2', seconds);
+                          localStorage.setItem('leadernamemed3', localStorage.getItem("leadernamemed2"));
+                          localStorage.setItem('leadernamemed2', playername);
+                        } else if (seconds < parseInt(localStorage.getItem("leadermed3"))) {
+                          leader3.innerHTML = playername + ': ' + localStorage.getItem("endtime");
+                          leader2.innerHTML = localStorage.getItem('leadernamemed2') + ': ' + localStorage.getItem("leadermed2");
+                          leader1.innerHTML = localStorage.getItem('leadernamemed1') + ': ' + localStorage.getItem("leadermed1");
+                          localStorage.setItem('leadermed3', seconds);
+                          localStorage.setItem('leadernamemed3', playername);
+                        }
+                    }
+                    
+                  }
+
+                  //Hard level leaderboard
+                  if (poke_size == 15) {
+                    namesubmit.onclick = function() {
+                      let playername = nametext.value;
+                      if (seconds < parseInt(localStorage.getItem("leaderhard1"))) {
+                          console.log(localStorage.getItem('player'));
+                          leader3.innerHTML = localStorage.getItem('leadernamehard2') + ': ' + localStorage.getItem("leaderhard2");
+                          leader2.innerHTML = localStorage.getItem('leadernamehard1') + ': ' + localStorage.getItem("leaderhard1");
+                          leader1.innerHTML = playername + ': ' + localStorage.getItem("endtime");
+                          localStorage.setItem('leaderhard3', localStorage.getItem("leaderhard2"));
+                          localStorage.setItem('leaderhard2', localStorage.getItem("leaderhard1"));
+                          localStorage.setItem('leaderhard1', seconds);
+                          localStorage.setItem('leadernamehard3', localStorage.getItem("leadernamehard2"));
+                          localStorage.setItem('leadernamehard2', localStorage.getItem("leadernamehard1"));
+                          localStorage.setItem('leadernamehard1', playername);
+                          
+                        } else if (seconds < parseInt(localStorage.getItem("leaderhard2"))) {
+                          leader3.innerHTML = localStorage.getItem('leadernamehard2') + ': ' + localStorage.getItem("leaderhard2");
+                          leader2.innerHTML = playername + ': ' + localStorage.getItem("endtime");
+                          leader1.innerHTML = localStorage.getItem('leadernamehard1') + ': ' + localStorage.getItem("leaderhard1");
+                          localStorage.setItem('leaderhard3', localStorage.getItem("leaderhard2"));
+                          localStorage.setItem('leaderhard2', seconds);
+                          localStorage.setItem('leadernamehard2', playername);
+                        } else if (seconds < parseInt(localStorage.getItem("leaderhard3"))) {
+                          leader3.innerHTML = playername + ': ' + localStorage.getItem("endtime");
+                          leader2.innerHTML = localStorage.getItem('leadernamehard2') + ': ' + localStorage.getItem("leaderhard2");
+                          leader1.innerHTML = localStorage.getItem('leadernamehard1') + ': ' + localStorage.getItem("leaderhard1");
+                          localStorage.setItem('leaderhard3', seconds);
+                          localStorage.setItem('leadernamehard3', playername);
+                        }
+                    }
+                  } 
+
+                  function checkhigh() {
+                    if (parseInt(localStorage.getItem("endtime")) < parseInt(localStorage.getItem("leadereasy1"))) {
+                      localStorage.setItem("highscore", seconds);
+                      best_time.innerHTML = localStorage.getItem("highscore") + " -- New High Score!";
+                      if (poke_size == 6) {
+                        if (parseInt(localStorage.getItem("endtime")) < parseInt(localStorage.getItem("leadereasy1"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                          
+                        } else if (parseInt(localStorage.getItem("endtime")) < parseInt(localStorage.getItem("leadereasy2"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        } else if (parseInt(localStorage.getItem("endtime")) < parseInt(localStorage.getItem("leadereasy3"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        }
+                      }
+                      if (poke_size == 10) {
+                        if (parseInt(localStorage.getItem("highscore")) < parseInt(localStorage.getItem("leadermed1"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        } else if (parseInt(localStorage.getItem("highscore")) < parseInt(localStorage.getItem("leadermed2"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        } else if (parseInt(localStorage.getItem("highscore")) < parseInt(localStorage.getItem("leadermed3"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        }                        
+                      }
+                      if (poke_size == 15) {
+                        if (parseInt(localStorage.getItem("highscore")) < parseInt(localStorage.getItem("leaderhard1"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        } else if (parseInt(localStorage.getItem("highscore")) < parseInt(localStorage.getItem("leaderhard2"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        } else if (parseInt(localStorage.getItem("highscore")) < parseInt(localStorage.getItem("leaderhard3"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        }                        
+                      }
+
+                    } else if (parseInt(localStorage.getItem("endtime")) >= parseInt(localStorage.getItem("leadereasy1"))) {
+                        best_time.innerHTML = localStorage.getItem("highscore");
+                        if (poke_size == 6) {
+                          if (parseInt(localStorage.getItem("endtime")) < parseInt(localStorage.getItem("leadereasy1"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                          
+                        } else if (parseInt(localStorage.getItem("endtime")) < parseInt(localStorage.getItem("leadereasy2"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        } else if (parseInt(localStorage.getItem("endtime")) < parseInt(localStorage.getItem("leadereasy3"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        } else {
+                          leader3.innerHTML = localStorage.getItem('leadernameeasy3') + ': ' + localStorage.getItem("leadereasy3");
+                          leader2.innerHTML = localStorage.getItem('leadernameeasy2') + ': ' + localStorage.getItem("leadereasy2");
+                          leader1.innerHTML = localStorage.getItem('leadernameeasy1') + ': ' + localStorage.getItem("leadereasy1");
+                        }
+                      }
+                      if (poke_size == 10) {
+                        if (parseInt(localStorage.getItem("highscore")) < parseInt(localStorage.getItem("leadermed1"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        } else if (parseInt(localStorage.getItem("highscore")) < parseInt(localStorage.getItem("leadermed2"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        } else if (parseInt(localStorage.getItem("highscore")) < parseInt(localStorage.getItem("leadermed3"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        } else {
+                          leader3.innerHTML = localStorage.getItem('leadernamemed3') + ': ' + localStorage.getItem("leadermed3");
+                          leader2.innerHTML = localStorage.getItem('leadernamemed2') + ': ' + localStorage.getItem("leadermed2");
+                          leader1.innerHTML = localStorage.getItem('leadernamemed1') + ': ' + localStorage.getItem("leadermed1");
+                        }                       
+                      }
+                      if (poke_size == 15) {
+                        if (parseInt(localStorage.getItem("highscore")) < parseInt(localStorage.getItem("leaderhard1"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        } else if (parseInt(localStorage.getItem("highscore")) < parseInt(localStorage.getItem("leaderhard2"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        } else if (parseInt(localStorage.getItem("highscore")) < parseInt(localStorage.getItem("leaderhard3"))) {
+                          nametext.classList.remove('hidden');
+                          namesubmit.classList.remove('hidden');
+                        } else {
+                          leader3.innerHTML = localStorage.getItem('leadernamehard3') + ': ' + localStorage.getItem("leaderhard3");
+                          leader2.innerHTML = localStorage.getItem('leadernamehard2') + ': ' + localStorage.getItem("leaderhard2");
+                          leader1.innerHTML = localStorage.getItem('leadernamehard1') + ': ' + localStorage.getItem("leaderhard1");
+                        }                       
+                      }
+                    }
+                  } 
+                  
+                }
+              }
+              else {
+
+                // in 1/2 second reset these tokens
+                setTimeout( reset, 500 );
+                document.getElementById('incorrect').play();
+              }
+
+            }
+            }
+          });
+        }
+
+      });
+
+      //Play again
+
+     play_again.addEventListener('click', function() {
+        match_counter = 0;
+        seconds = 0;
+        //hide game over
+        screen_gameover.classList.add('hidden');
+        //show game play screen
+        screen_start.classList.remove("hidden");
+
+        //clear old pokeballs
+        while (tokens.children.length > 0) {
+          tokens.removeChild(tokens.children[0]);
+        }
+
+        //hide name text 
+        nametext.classList.add('hidden');
+        nametext.value = "";
+        
+        //hide name submit
+        namesubmit.classList.add('hidden');
+        //clear Leaderboard
+        leader3.innerHTML = "";
+        leader2.innerHTML = "";
+        leader1.innerHTML = ""; 
+      });
+
+
+      function reset() {
+        // hide both tokens
+        token1.src = 'assignment06_images/pokeball.png';
+        token2.src = 'assignment06_images/pokeball.png';
+
+        // flip the tokens back to false to reset for the next match
+        token1 = false;
+        token2 = false;
+      }
+
+
+    </script>
+
+
+  </body>
+
+</html>
